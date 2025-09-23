@@ -4,4 +4,29 @@ version = "0.1.0"
 description = "Lightweight implementation of transformer architecture for large language models."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "einops>=0.8.1", # tensor operations
+    "einx>=0.3.0", # more general tensor operations
+    "jaxtyping>=0.3.0", # type hints for pytorch/jax/numpy
+    "numpy>=2.3.3",
+    "psutil>=6.1.1",
+    "pytest>=8.3.4",
+    "regex>=2024.11.6", # more powerful regex than the builtin `re` module
+    "tiktoken>=0.9.0", # BPE tokenizer by OpenAI
+    "torch~=2.6.0",
+    "tqdm>=4.67.1", # Show smart progress bars for loops and iterables (taqaddum, arabic for "progress")
+    "ty>=0.0.1a16", # Fast type checker
+    "wandb>=0.19.7", # Python SDK to track, visualize, and manage machine learning experiments.
+]
+
+[build-system]
+requires = ["uv_build>=0.8.3,<0.9.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "minimal_transformer_llm"
+module-root = ""
+
+[tool.uv]
+package = true
+python-preference = "managed"
