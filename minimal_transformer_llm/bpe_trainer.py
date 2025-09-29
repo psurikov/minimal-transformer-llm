@@ -8,7 +8,7 @@ class BpeTrainer:
     def __init__(self):
         self.pretoken_regex = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
         self.chunk_min_size = 1024 #65536
-        self.buffer_size = 256
+        self.buffer_size = 256 #4096
         self.whitespace_search_size = 1024
         self.special_token_search_size = 50
         
@@ -126,7 +126,7 @@ class BpeTrainer:
         chunk_end = chunk_start + desired_size
         while chunk_start < end:
             file.seek(chunk_end)
-            read_count = min(self.whitespace_search_size, end - chunk_end)
+            read_count = max(min(self.whitespace_search_size, end - chunk_end), 0)
             read_ahead = file.read(read_count)
             if read_ahead != b'':
                 for i in range(1, len(read_ahead)):
