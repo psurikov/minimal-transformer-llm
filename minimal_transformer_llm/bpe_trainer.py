@@ -58,10 +58,11 @@ class BpeTrainer:
         merges = []
         vocab = {i: bytes([i]) for i in range(256)}
         replace_id = 256
+        pair_counts = self._countPairs(pretoken_ids_list, pretoken_counts)
         for _ in range(iterations):
-            pair_counts = self._countPairs(pretoken_ids_list, pretoken_counts)
+            # pair_counts = self._countPairs(pretoken_ids_list, pretoken_counts)
             max_pair = self._maxPair(pair_counts, vocab)
-            # del pair_counts[max_pair]
+            del pair_counts[max_pair]
             for i in range(len(pretoken_ids_list)):
                 pretoken_ids_list[i] = self._merge(pretoken_ids_list[i], pretoken_counts[i], max_pair, replace_id, pair_counts)
             merges.append((vocab[max_pair[0]], vocab[max_pair[1]]))
@@ -108,22 +109,26 @@ class BpeTrainer:
         while i < len(ids):
             if i < len(ids) - 1 and ids[i] == pair[0] and ids[i + 1] == pair[1]:
                 newids.append(replace_id)
-                #if i + 2 < len(ids):
+                if i + 2 < len(ids):
                     # take the new pair that is formed to the right, and add it to the counts
-                    #right_replaced = (replace_id, ids[i + 2])
-                    #pair_counts[right_replaced] = pair_counts.get(right_replaced, 0) + ids_count
+                    right_replaced = (replace_id, ids[i + 2])
+                    pair_counts[right_replaced] = pair_counts.get(right_replaced, 0) + ids_count
                     # the old pair can now be sutracted from the counts
-                    #right_deleted = (ids[i + 1], ids[i + 2])
-                    #if right_deleted in pair_counts:
-                    #    pair_counts[right_deleted] -= ids_count
-                #if i > 0:
+                    right_deleted = (ids[i + 1], ids[i + 2])
+                    if right_deleted in pair_counts:
+                        pair_counts[right_deleted] -= ids_count
+                        if pair_counts[right_deleted] == 0:
+                            del pair_counts[right_deleted]
+                if i > 0:
                     # take the new pair that is formed to the left, and add it to the counts
-                    #left_replaced = (ids[i - 1], replace_id)
-                    #pair_counts[left_replaced] = pair_counts.get(left_replaced, 0) + ids_count
+                    left_replaced = (ids[i - 1], replace_id)
+                    pair_counts[left_replaced] = pair_counts.get(left_replaced, 0) + ids_count
                     # the old pair toe the left can be subtracted from the counts
-                    #left_deleted = (ids[i - 1], ids[i])
-                    #if left_deleted in pair_counts:
-                    #    pair_counts[left_deleted] -= ids_count
+                    left_deleted = (ids[i - 1], ids[i])
+                    if left_deleted in pair_counts:
+                        pair_counts[left_deleted] -= ids_count
+                        if pair_counts[left_deleted] == 0:
+                            del pair_counts[left_deleted]
                 i += 2
             else:
                 newids.append(ids[i])
