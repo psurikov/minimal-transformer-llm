@@ -591,4 +591,5 @@ def run_train_bpe(
                 Merges are ordered by order of creation.
     """
     trainer = BpeTrainer()
-    return trainer.train(input_path, vocab_size, special_tokens)
+    trainer.train(input_path, vocab_size, special_tokens)
+    return trainer.vocab, trainer.merges
