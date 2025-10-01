@@ -6,8 +6,8 @@ import regex
 
 class BpeTrainer:
     pretoken_regex = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
-    chunk_min_size = 1024 #65536
-    buffer_size = 256 #4096
+    chunk_min_size = 1024
+    buffer_size = 256
     whitespace_search_size = 1024
     special_token_search_size = 1024
 
@@ -159,7 +159,7 @@ class BpeTrainer:
             chunk_end = min(chunk_start + chunk_size, end)
         return chunks
     
-    def _adjust_chunk_end(self, file: BinaryIO, chunk_end: int, end: int, special_tokens: list[bytes]) -> int:
+    def _adjust_chunk_end1(self, file: BinaryIO, chunk_end: int, end: int, special_tokens: list[bytes]) -> int:
         if chunk_end == end:
             return chunk_end
         file.seek(chunk_end)
@@ -179,8 +179,33 @@ class BpeTrainer:
             else:
                 chunk_end += read_count
         return chunk_end
+    
+    def _adjust_chunk_end(self, file: BinaryIO, chunk_end: int, end: int, special_tokens: list[bytes]) -> int:
+        if chunk_end == end:
+            return chunk_end
+        file.seek(chunk_end)
+        while chunk_end < end:
+            read_count = max(min(BpeTrainer.special_token_search_size, end - chunk_end), 0)
+            read_ahead = file.read(read_count)
+            found_token = False
+            found_at = 0
+            for special_token in special_tokens:
+                found_at = read_ahead.find(special_token)
+                if found_at != -1:
+                    found_token = True
+                    break
+                found_at = read_ahead.find(b'\n')
+                if found_at != -1:
+                    found_token = True
+                    break
+            if found_token:
+                chunk_end += found_at
+                break
+            else:
+                chunk_end += read_count
+        return chunk_end
 
-    def _split1(self, file: BinaryIO, start: int, end: int, desired_size: int, special_tokens: list[bytes]) -> list[tuple[int, int]]:
+    def _split2(self, file: BinaryIO, start: int, end: int, desired_size: int, special_tokens: list[bytes]) -> list[tuple[int, int]]:
         chunks = []
         file.seek(start)
         total_size = end - start
