@@ -164,7 +164,7 @@ class BpeTrainer:
             chunk_end = min(chunk_start + chunk_size, end)
         return chunks
     
-    def _adjust_chunk_end1(self, file: BinaryIO, chunk_end: int, end: int, special_tokens: list[bytes]) -> int:
+    def _adjust_chunk_end(self, file: BinaryIO, chunk_end: int, end: int, special_tokens: list[bytes]) -> int:
         if chunk_end == end:
             return chunk_end
         file.seek(chunk_end)
@@ -185,7 +185,7 @@ class BpeTrainer:
                 chunk_end += read_count
         return chunk_end
     
-    def _adjust_chunk_end(self, file: BinaryIO, chunk_end: int, end: int, special_tokens: list[bytes]) -> int:
+    def _adjust_chunk_end1(self, file: BinaryIO, chunk_end: int, end: int, special_tokens: list[bytes]) -> int:
         if chunk_end == end:
             return chunk_end
         file.seek(chunk_end)

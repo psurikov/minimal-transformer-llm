@@ -12,6 +12,7 @@ dependencies = [
     "psutil>=6.1.1",
     "pytest>=8.3.4",
     "regex>=2024.11.6", # more powerful regex than the builtin `re` module
+    "scalene>=1.5.55",
     "tiktoken>=0.9.0", # BPE tokenizer by OpenAI
     "torch~=2.6.0",
     "tqdm>=4.67.1", # Show smart progress bars for loops and iterables (taqaddum, arabic for "progress")
