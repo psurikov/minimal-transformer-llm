@@ -9,7 +9,9 @@ import torch
 from jaxtyping import Bool, Float, Int
 from torch import Tensor
 from minimal_transformer_llm.bpe_tokenizer import BpeTokenizer
-from minimal_transformer_llm.bpe_trainer import BpeTrainer
+from minimal_transformer_llm.bpe_trainer_sequential import BpeTrainerSequential
+from minimal_transformer_llm.bpe_trainer_multiprocess import BpeTrainerMultiProcess
+from minimal_transformer_llm.bpe_trainer_multithreaded import BpeTrainerMultiThreaded
 
 def run_linear(
     d_in: int,
@@ -590,6 +592,6 @@ def run_train_bpe(
                 representing that <token1> was merged with <token2>.
                 Merges are ordered by order of creation.
     """
-    trainer = BpeTrainer()
+    trainer = BpeTrainerMultiProcess()
     trainer.train(input_path, vocab_size, special_tokens)
     return trainer.vocab, trainer.merges
