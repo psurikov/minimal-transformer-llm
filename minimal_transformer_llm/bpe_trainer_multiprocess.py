@@ -4,6 +4,7 @@ from typing import BinaryIO
 import os
 import regex
 import mmap
+import logging
 
 class BpeTrainerMultiProcess:
     pretoken_regex = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
@@ -15,8 +16,10 @@ class BpeTrainerMultiProcess:
     def __init__(self):
         self.vocab = []
         self.merges = []
+        self._setup_logging()
         
     def train(self, input_path: str, vocab_size: int, special_tokens: list[str]):
+        self._log_message("Started training for %s with vocab size %d and %d special tokens", input_path, vocab_size, len(special_tokens))
         chunks = []
         process_count = cpu_count()
         regex_pattern = "|".join([regex.escape(special_token) for special_token in special_tokens]) + "|" + BpeTrainerMultiProcess.pretoken_regex
@@ -32,15 +35,19 @@ class BpeTrainerMultiProcess:
             vocab, merges = self._train_chunks(input_path, chunks, regex_pattern, encoded_special_tokens, iterations)
             self.vocab = vocab
             self.merges = merges
+        self._log_message("Finished training for %s", input_path)
 
     def _train_chunks(self, input_path: str, chunks: list[tuple[int, int]], regex_pattern: str, special_tokens: list[bytes], iterations: int) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
+        self._log_message("Started collecting pretokens")
         pretokens = BpeTrainerMultiProcess._collect_pretokens(input_path, chunks, regex_pattern, special_tokens)
         for special_token in special_tokens:
             special_token_str = special_token.decode('utf-8')
             if special_token_str in pretokens:
                 del pretokens[special_token_str]
+        self._log_message("Finished collecting pretokens, collected %d pretokens", len(pretokens))
 
         # count pairs
+        self._log_message("Started counting pairs")
         pretoken_counts = [None] * len(pretokens)
         pretoken_ids_list = [None] * len(pretokens)
         pretoken_ids_index = 0
@@ -49,13 +56,16 @@ class BpeTrainerMultiProcess:
             pretoken_ids = list(pretoken.encode("utf-8"))
             pretoken_ids_list[pretoken_ids_index] = pretoken_ids
             pretoken_ids_index += 1
+        self._log_message("Finished counting pairs")
         
         # generate vocab and merges
+        self._log_message("Started merging pairs")
         merges = []
         vocab = {i: bytes([i]) for i in range(256)}
         replace_id = 256
         pair_counts = self._count_pairs(pretoken_ids_list, pretoken_counts)
-        for _ in range(iterations):
+        for iteration in range(iterations):
+            # self._log_message("Iteration %d", iteration)
             # you could manually recount the pairs, but currently they're adjusted during merge
             # pair_counts = self._count_pairs(pretoken_ids_list, pretoken_counts)
             max_pair = self._max_pair(pair_counts, vocab)
@@ -71,6 +81,7 @@ class BpeTrainerMultiProcess:
             vocab[replace_id] = special_token
             replace_id += 1
 
+        self._log_message("Finished merging pairs")
         return vocab, merges
     
     # splits the chunks into pretokens, and returns their statistics
@@ -115,6 +126,8 @@ class BpeTrainerMultiProcess:
 
     @staticmethod
     def _merge(ids: list[int], ids_count: int, pair: tuple[int, int], replace_id: int, pair_counts: dict[tuple[int, int], int]):
+        if len(ids) <= 1:
+            return ids
         newids = []
         i = 0
         while i < len(ids):
@@ -196,3 +209,16 @@ class BpeTrainerMultiProcess:
             else:
                 chunk_end += read_count
         return chunk_end
+    
+    def _setup_logging(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        if self.logger.hasHandlers():
+            return
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+        self.logger.setLevel(logging.INFO)
+
+    def _log_message(self, msg: str, *args):
+        self.logger.info(msg, *args)
