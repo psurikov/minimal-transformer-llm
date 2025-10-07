@@ -12,6 +12,7 @@ from minimal_transformer_llm.bpe_tokenizer import BpeTokenizer
 from minimal_transformer_llm.bpe_trainer_sequential import BpeTrainerSequential
 from minimal_transformer_llm.bpe_trainer_multiprocess import BpeTrainerMultiProcess
 from minimal_transformer_llm.bpe_trainer_multithreaded import BpeTrainerMultiThreaded
+from minimal_transformer_llm.bpe_trainer_optimized import BpeTrainerOptimized
 
 def run_linear(
     d_in: int,
@@ -592,6 +593,6 @@ def run_train_bpe(
                 representing that <token1> was merged with <token2>.
                 Merges are ordered by order of creation.
     """
-    trainer = BpeTrainerMultiProcess()
+    trainer = BpeTrainerOptimized()
     trainer.train(input_path, vocab_size, special_tokens)
     return trainer.vocab, trainer.merges
