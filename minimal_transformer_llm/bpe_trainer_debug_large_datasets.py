@@ -4,6 +4,7 @@ import time
 from minimal_transformer_llm.bpe_trainer_sequential import BpeTrainerSequential
 from minimal_transformer_llm.bpe_trainer_multithreaded import BpeTrainerMultiThreaded
 from minimal_transformer_llm.bpe_trainer_multiprocess import BpeTrainerMultiProcess
+from minimal_transformer_llm.bpe_trainer_optimized import BpeTrainerOptimized
 from functools import lru_cache
 
 def gpt2_bytes_to_unicode1():
@@ -73,7 +74,7 @@ def gpt2_bytes_to_unicode() -> dict[int, str]:
 # -----------------------------------------------------------------------------------------------------------------------
 def test(input_path: str, vocab_size: int, special_tokens: list[str], vocab_path: str, merges_path: str):
     start_time = time.time()
-    trainer = BpeTrainerMultiProcess()
+    trainer = BpeTrainerOptimized()
     trainer.train(input_path, vocab_size, special_tokens)
     vocab = trainer.vocab
     merges = trainer.merges
@@ -96,5 +97,6 @@ if __name__ == "__main__":
     #test(r"""S:\dev\cs336\minimal-transformer-llm\tests\fixtures\tinystories_sample.txt""", 500, ["<|endoftext|>"], "output_tinystories_sample_vocab.json", "output_tinystories_sample_merges.txt")
     #test(r"""S:\dev\cs336\minimal-transformer-llm\tests\fixtures\tinystories_sample_5M.txt""", 1000, ["<|endoftext|>"], "output_tinystories_5M_sample_vocab.json", "output_tinystories_5M_sample_merges.txt")
     #test(r"""S:\dev\cs336\datasets\TinyStoriesV2-GPT4-valid.txt""", 10000, ["<|endoftext|>"], "output_tinystoriesv2-GPT4-valid_vocab.json", "output_tinystoriesv2-GPT4-valid_merges.txt")
-    test(r"""/app/tiny-stories-train.txt""", 10000, ["<|endoftext|>"], "output_tinystoriesv2-GPT4-train_vocab.json", "output_tinystoriesv2-GPT4-train_merges.txt")
-    test(r"""/app/tiny-stories-train.txt""", 32000, ["<|endoftext|>"], "output_tinystoriesv2-GPT4-train_vocab.json", "output_tinystoriesv2-GPT4-train_merges.txt")
+    #test(r"""S:\dev\cs336\datasets\TinyStoriesV2-GPT4-train.txt""", 10000, ["<|endoftext|>"], "output_tinystoriesv2-GPT4-train_vocab.json", "output_tinystoriesv2-GPT4-train_merges.txt")
+    #test(r"""S:\dev\cs336\datasets\owt_valid.txt""", 32000, ["<|endoftext|>"], "output_owt_valid_vocab.json", "output_owt_valid_merges.txt")
+    test(r"""S:\dev\cs336\datasets\owt_train.txt""", 32000, ["<|endoftext|>"], "output_owt_train_vocab.json", "output_owt_train_merges.txt")
