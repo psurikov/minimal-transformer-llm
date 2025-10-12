@@ -1,6 +1,6 @@
 from collections import Counter
 from multiprocessing import Pool, cpu_count
-from typing import BinaryIO
+from .bpe_utilities import split_into_chunks, gpt2_pretoken_regex
 import os
 import time
 import regex
@@ -8,11 +8,8 @@ import mmap
 import logging
 
 class BpeTrainer:
-    pretoken_regex = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
     chunk_min_size = 1024
     buffer_size = 256
-    whitespace_search_size = 1024
-    special_token_search_size = 1024
 
     def __init__(self):
         self.vocab = []
@@ -96,7 +93,7 @@ class BpeTrainer:
             file_size_bytes = file.tell()
             desired_chunk_size = min(max(file_size_bytes // process_count, BpeTrainer.chunk_min_size), file_size_bytes)
             mm = mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ)
-            chunks = self._split(mm, 0, file_size_bytes, desired_chunk_size, encoded_special_tokens)
+            chunks = split_into_chunks(mm, 0, file_size_bytes, desired_chunk_size, encoded_special_tokens)
             mm.close()
             pretokens = BpeTrainer._pretokenize_parallel(input_path, chunks, special_tokens)
             for special_token in special_tokens:
@@ -106,8 +103,8 @@ class BpeTrainer:
 
     # splits the chunks into pretokens, and returns their statistics
     @staticmethod
-    def _pretokenize_parallel(file_path, chunks, special_tokens):
-        regex_pattern = "|".join([regex.escape(special_token) for special_token in special_tokens]) + "|" + BpeTrainer.pretoken_regex
+    def _pretokenize_parallel(file_path: str, chunks: list[tuple[int, int]], special_tokens: list[str]):
+        regex_pattern = gpt2_pretoken_regex(special_tokens)
         encoded_special_tokens = [token.encode('utf-8') for token in special_tokens]
         args_list = [(start, end, regex_pattern, encoded_special_tokens, file_path) for start, end in chunks]
         with Pool(len(chunks)) as pool:
@@ -124,7 +121,7 @@ class BpeTrainer:
         regex_instance = regex.compile(regex_pattern)
         with open(input_path, "rb") as f:
             mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-            read_parts = BpeTrainer._split(mm, start, end, BpeTrainer.buffer_size, special_tokens)
+            read_parts = split_into_chunks(mm, start, end, BpeTrainer.buffer_size, special_tokens)
             for read_start, read_end in read_parts:
                 read_bytes = mm[read_start:read_end]
                 text = read_bytes.decode("utf-8", errors="replace")
@@ -208,41 +205,7 @@ class BpeTrainer:
         if write < n:
             ids[write] = sentinel
         return write
-
-    @staticmethod
-    def _split(mm: mmap.mmap, start: int, end: int, desired_size: int, special_tokens: list[bytes]) -> list[tuple[int, int]]:
-        chunks = []
-        total_size = end - start
-        chunk_size = min(desired_size, total_size)
-        chunk_start = start
-        chunk_end = chunk_start + desired_size
-        while chunk_start < end:
-            chunk_end = BpeTrainer._adjust_chunk_end(mm, chunk_end, end, special_tokens)
-            chunks.append((chunk_start, chunk_end))
-            chunk_start = chunk_end
-            chunk_end = min(chunk_start + chunk_size, end)
-        return chunks
-
-    @staticmethod
-    def _adjust_chunk_end(mm: mmap.mmap, chunk_end: int, end: int, special_tokens: list[bytes]) -> int:
-        if chunk_end >= end:
-            return end
-        while chunk_end < end:
-            read_count = min(BpeTrainer.special_token_search_size, end - chunk_end)
-            read_ahead = mm[chunk_end:chunk_end + read_count]
-            found_token = False
-            for special_token in special_tokens:
-                pos = read_ahead.find(special_token)
-                if pos != -1:
-                    chunk_end += pos
-                    found_token = True
-                    break
-            if found_token:
-                break
-            else:
-                chunk_end += read_count
-        return chunk_end
-    
+   
     def _setup_logging(self):
         self.logger = logging.getLogger(self.__class__.__name__)
         if self.logger.hasHandlers():
