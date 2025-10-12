@@ -9,6 +9,7 @@ class BpeTokenizer:
         self.special_tokens = special_tokens or []
         self.reverse_vocab = {v: k for k, v in vocab.items()}
         self.pretokenizer = BpePretokenizer(special_tokens)
+        self.cache = {}
 
     @classmethod
     def from_files(cls, vocab_filepath: str, merges_filepath: str, special_tokens: list[str] | None = None):
@@ -18,29 +19,31 @@ class BpeTokenizer:
 
     def encode(self, text: str) -> list[int]:
         merged = []
-        cache = {}
         for special_token in self.special_tokens:
-            cache[special_token] = [self.reverse_vocab[special_token.encode("utf-8")]]
+            self.cache[special_token] = [self.reverse_vocab[special_token.encode("utf-8")]]
         for token in self.pretokenizer.next_token(text):
-            if token in cache:
-                merged += cache[token]
+            if token in self.cache:
+                merged += self.cache[token]
             else:
                 token_bytes = token.encode("utf-8")
                 token_bytes_parts = [bytes([a]) for a in token_bytes]
+                count = len(token_bytes_parts)
                 for merge in self.merges:
                     left, right = merge
-                    merged_parts = []
                     i = 0
-                    while i < len(token_bytes_parts):
-                        if i + 1 < len(token_bytes_parts) and token_bytes_parts[i] == left and token_bytes_parts[i + 1] == right:
-                            merged_parts.append(left + right)
+                    into = 0
+                    while i < count:
+                        if i + 1 < count and token_bytes_parts[i] == left and token_bytes_parts[i + 1] == right:
+                            token_bytes_parts[into] = left + right
                             i += 2
+                            into += 1
                         else:
-                            merged_parts.append(token_bytes_parts[i])
+                            token_bytes_parts[into] = token_bytes_parts[i]
                             i += 1
-                    token_bytes_parts = merged_parts
-                ids = ([self.reverse_vocab[a] for a in token_bytes_parts])
-                cache[token] = ids
+                            into += 1
+                    count = into
+                ids = ([self.reverse_vocab[a] for a in token_bytes_parts[:count]])
+                self.cache[token] = ids
                 merged += ids
         return merged
     
