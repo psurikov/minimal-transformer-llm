@@ -50,7 +50,7 @@ def deserialize_vocab_and_merges(vocab_path: str, merges_path: str) -> tuple[dic
     return vocab, merges
 
 # returns a regex based on gpt2 pretoken regex with special tokens
-def gpt2_pretoken_regex(special_tokens: list[str]) -> regex:
+def gpt2_pretoken_regex(special_tokens: list[str]) -> str:
     pretoken_regex = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
     regex_pattern = "|".join([regex.escape(special_token) for special_token in special_tokens]) + "|" + pretoken_regex
     return regex_pattern
