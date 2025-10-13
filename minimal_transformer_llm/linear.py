@@ -12,7 +12,7 @@ class Linear(nn.Module):
         self.dtype = dtype
         self.weight = nn.Parameter(torch.empty(out_features, in_features, device=device, dtype=dtype))
         sigma = math.sqrt(2.0 / (in_features + out_features))
-        nn.init.trunc_normal_(self.weight, 0, sigma, -3 * sigma, 3 * sigma)
+        nn.init.trunc_normal_(self.weight, 0.0, sigma, -3 * sigma, 3 * sigma)
      
      def forward(self, x:torch.Tensor) -> torch.Tensor:
         # return x @ self.weight.T

@@ -11,6 +11,7 @@ from torch import Tensor
 from minimal_transformer_llm.bpe_tokenizer import BpeTokenizer
 from minimal_transformer_llm.bpe_trainer import BpeTrainer
 from minimal_transformer_llm.linear import Linear
+from minimal_transformer_llm.embedding import Embedding
 
 def run_linear(
     d_in: int,
@@ -30,9 +31,10 @@ def run_linear(
     Returns:
         Float[Tensor, "... d_out"]: The transformed output of your linear module.
     """
-    linear = Linear(d_in, d_out, None, torch.float)
+    device = torch.device("cpu")
+    linear = Linear(d_in, d_out, device, torch.float)
     linear.weight.data.copy_(weights)
-    out_features = linear.forward(in_features)
+    out_features = linear.forward(in_features.to(device))
     return out_features
 
 
@@ -55,8 +57,11 @@ def run_embedding(
         Float[Tensor, "... d_model"]: Batch of embeddings returned by your Embedding layer.
     """
 
-    raise NotImplementedError
-
+    device = torch.device("cpu")
+    embedding = Embedding(vocab_size, d_model, device, torch.float)
+    embedding.weight.data.copy_(weights)
+    out_embeddings = embedding.forward(token_ids.to(device))
+    return out_embeddings
 
 def run_swiglu(
     d_model: int,
