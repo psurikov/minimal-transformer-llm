@@ -10,6 +10,7 @@ from jaxtyping import Bool, Float, Int
 from torch import Tensor
 from minimal_transformer_llm.bpe_tokenizer import BpeTokenizer
 from minimal_transformer_llm.bpe_trainer import BpeTrainer
+from minimal_transformer_llm.linear import Linear
 
 def run_linear(
     d_in: int,
@@ -29,8 +30,10 @@ def run_linear(
     Returns:
         Float[Tensor, "... d_out"]: The transformed output of your linear module.
     """
-
-    raise NotImplementedError
+    linear = Linear(d_in, d_out, None, torch.float)
+    linear.weight.data.copy_(weights)
+    out_features = linear.forward(in_features)
+    return out_features
 
 
 def run_embedding(
