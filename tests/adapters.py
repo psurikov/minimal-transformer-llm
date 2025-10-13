@@ -12,6 +12,9 @@ from minimal_transformer_llm.bpe_tokenizer import BpeTokenizer
 from minimal_transformer_llm.bpe_trainer import BpeTrainer
 from minimal_transformer_llm.linear import Linear
 from minimal_transformer_llm.embedding import Embedding
+from minimal_transformer_llm.rmsnorm import RMSNorm
+
+device_const = "cpu"
 
 def run_linear(
     d_in: int,
@@ -31,7 +34,7 @@ def run_linear(
     Returns:
         Float[Tensor, "... d_out"]: The transformed output of your linear module.
     """
-    device = torch.device("cpu")
+    device = torch.device(device_const)
     linear = Linear(d_in, d_out, device, torch.float)
     linear.weight.data.copy_(weights)
     out_features = linear.forward(in_features.to(device))
@@ -57,7 +60,7 @@ def run_embedding(
         Float[Tensor, "... d_model"]: Batch of embeddings returned by your Embedding layer.
     """
 
-    device = torch.device("cpu")
+    device = torch.device(device_const)
     embedding = Embedding(vocab_size, d_model, device, torch.float)
     embedding.weight.data.copy_(weights)
     out_embeddings = embedding.forward(token_ids.to(device))
@@ -387,8 +390,12 @@ def run_rmsnorm(
         Float[Tensor,"... d_model"]: Tensor of with the same shape as `in_features` with the output of running
         RMSNorm of the `in_features`.
     """
-    raise NotImplementedError
-
+    device = torch.device(device_const)
+    dtype = torch.float
+    rmsnorm = RMSNorm(d_model, eps, device, dtype)
+    rmsnorm.weight.data.copy_(weights)
+    output_features = rmsnorm.forward(in_features)
+    return output_features
 
 def run_silu(in_features: Float[Tensor, " ..."]) -> Float[Tensor, " ..."]:
     """Given a tensor of inputs, return the output of applying SiLU
