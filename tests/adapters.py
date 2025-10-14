@@ -13,6 +13,7 @@ from minimal_transformer_llm.bpe_trainer import BpeTrainer
 from minimal_transformer_llm.linear import Linear
 from minimal_transformer_llm.embedding import Embedding
 from minimal_transformer_llm.rmsnorm import RMSNorm
+from minimal_transformer_llm.swiglu import Swiglu
 
 device_const = "cpu"
 
@@ -66,6 +67,7 @@ def run_embedding(
     out_embeddings = embedding.forward(token_ids.to(device))
     return out_embeddings
 
+
 def run_swiglu(
     d_model: int,
     d_ff: int,
@@ -95,7 +97,13 @@ def run_swiglu(
     # swiglu.w1.weight.data = w1_weight
     # swiglu.w2.weight.data = w2_weight
     # swiglu.w3.weight.data = w3_weight
-    raise NotImplementedError
+    device = torch.device(device_const)
+    swiglu = Swiglu(d_model, d_ff, device, torch.float)
+    swiglu.w1.weight.data = w1_weight
+    swiglu.w2.weight.data = w2_weight
+    swiglu.w3.weight.data = w3_weight
+    out_features = swiglu.forward(in_features)
+    return out_features
 
 
 def run_scaled_dot_product_attention(
