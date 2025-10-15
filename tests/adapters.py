@@ -14,6 +14,7 @@ from minimal_transformer_llm.linear import Linear
 from minimal_transformer_llm.embedding import Embedding
 from minimal_transformer_llm.rmsnorm import RMSNorm
 from minimal_transformer_llm.swiglu import Swiglu
+from minimal_transformer_llm.rope import RotaryPositionalEmbedding
 
 device_const = "cpu"
 
@@ -220,7 +221,10 @@ def run_rope(
     Returns:
         Float[Tensor, " ... sequence_length d_k"]: Tensor with RoPEd input.
     """
-    raise NotImplementedError
+    device = torch.device(device_const)
+    rope = RotaryPositionalEmbedding(theta, d_k, max_seq_len, device)
+    out = rope.forward(in_query_or_key, token_positions)
+    return out
 
 
 def run_transformer_block(
