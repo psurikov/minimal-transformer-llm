@@ -16,6 +16,7 @@ from minimal_transformer_llm.rmsnorm import RMSNorm
 from minimal_transformer_llm.swiglu import Swiglu
 from minimal_transformer_llm.rope import RotaryPositionalEmbedding
 from minimal_transformer_llm.softmax import softmax
+from minimal_transformer_llm.scaled_dot_product_attention import scaled_dot_product_attention
 
 device_const = "cpu"
 
@@ -126,7 +127,7 @@ def run_scaled_dot_product_attention(
     Returns:
         Float[Tensor, " ... queries d_v"]: Output of SDPA
     """
-    raise NotImplementedError
+    return scaled_dot_product_attention(Q, K, V, mask)
 
 
 def run_multihead_self_attention(
