@@ -15,6 +15,7 @@ from minimal_transformer_llm.embedding import Embedding
 from minimal_transformer_llm.rmsnorm import RMSNorm
 from minimal_transformer_llm.swiglu import Swiglu
 from minimal_transformer_llm.rope import RotaryPositionalEmbedding
+from minimal_transformer_llm.softmax import softmax
 
 device_const = "cpu"
 
@@ -459,7 +460,8 @@ def run_softmax(in_features: Float[Tensor, " ..."], dim: int) -> Float[Tensor, "
         Float[Tensor, "..."]: Tensor of with the same shape as `in_features` with the output of
         softmax normalizing the specified `dim`.
     """
-    raise NotImplementedError
+    out_features = softmax(in_features, dim)
+    return out_features
 
 
 def run_cross_entropy(
