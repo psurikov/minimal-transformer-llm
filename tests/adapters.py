@@ -17,6 +17,7 @@ from minimal_transformer_llm.swiglu import Swiglu
 from minimal_transformer_llm.rope import RotaryPositionalEmbedding
 from minimal_transformer_llm.softmax import softmax
 from minimal_transformer_llm.scaled_dot_product_attention import scaled_dot_product_attention
+from minimal_transformer_llm.multihead_self_attention import MultiheadSelfAttention
 
 device_const = "cpu"
 
@@ -161,7 +162,15 @@ def run_multihead_self_attention(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    max_seq_len = 1000
+    device = torch.device(device_const)
+    multiheadSelfAttention = MultiheadSelfAttention(d_model, num_heads, max_seq_len, device)
+    multiheadSelfAttention.q_proj.weight.data = q_proj_weight
+    multiheadSelfAttention.k_proj.weight.data = k_proj_weight
+    multiheadSelfAttention.v_proj.weight.data = v_proj_weight
+    multiheadSelfAttention.o_proj.weight.data = o_proj_weight
+    out_features = multiheadSelfAttention.forward(in_features)
+    return out_features    
 
 
 def run_multihead_self_attention_with_rope(
