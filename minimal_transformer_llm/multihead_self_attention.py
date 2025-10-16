@@ -3,20 +3,23 @@ import torch
 import torch.nn as nn
 from minimal_transformer_llm.linear import Linear
 from minimal_transformer_llm.scaled_dot_product_attention import scaled_dot_product_attention
+from minimal_transformer_llm.rope import RotaryPositionalEmbedding
 
 class MultiheadSelfAttention(nn.Module):
-    def __init__(self, d_model: int, num_heads: int, max_seq_len: int, device: torch.device):
+    def __init__(self, d_model: int, num_heads: int, max_seq_len: int = 1000, theta: float = 10000.0, device: torch.device = None):
         super(MultiheadSelfAttention, self).__init__()
         self.d_model = d_model
         self.num_heads = num_heads
         self.max_seq_len = max_seq_len
+        self.theta = theta
         d_k = d_v = d_model // num_heads
+        self.rope = RotaryPositionalEmbedding(theta, d_k, max_seq_len, device)
         self.q_proj = Linear(num_heads * d_k, d_model, device, torch.float)
         self.k_proj = Linear(num_heads * d_k, d_model, device, torch.float)
         self.v_proj = Linear(num_heads * d_v, d_model, device, torch.float)
         self.o_proj = Linear(d_model, num_heads * d_v, device, torch.float)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, token_positions: torch.Tensor | None = None) -> torch.Tensor:
         # projections
         q = self.q_proj.forward(x)
         k = self.k_proj.forward(x)
@@ -25,6 +28,10 @@ class MultiheadSelfAttention(nn.Module):
         q_per_head = einops.rearrange(q, "... seq (h d_k) ->  ... h seq d_k", h = self.num_heads) 
         k_per_head = einops.rearrange(k, "... seq (h d_k) ->  ... h seq d_k", h = self.num_heads)
         v_per_head = einops.rearrange(v, "... seq (h d_k) ->  ... h seq d_k", h = self.num_heads)
+        # rope
+        if token_positions is not None:
+            q_per_head = self.rope.forward(q_per_head, token_positions)
+            k_per_head = self.rope.forward(k_per_head, token_positions)
         # causal mask
         *leading_dims, seq_len, _ = x.shape
         causal_mask = torch.tril(torch.ones(seq_len, seq_len, device=q_per_head.device, dtype=torch.bool))
