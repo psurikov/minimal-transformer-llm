@@ -18,6 +18,7 @@ from minimal_transformer_llm.rope import RotaryPositionalEmbedding
 from minimal_transformer_llm.softmax import softmax
 from minimal_transformer_llm.scaled_dot_product_attention import scaled_dot_product_attention
 from minimal_transformer_llm.multihead_self_attention import MultiheadSelfAttention
+from minimal_transformer_llm.transformer_block import TransformerBlock
 
 device_const = "cpu"
 
@@ -314,7 +315,24 @@ def run_transformer_block(
         Float[Tensor, "batch sequence_length d_model"] Tensor with the output of
         running the Transformer block on the input features while using RoPE.
     """
-    raise NotImplementedError
+    
+    device = torch.device(device_const)
+    in_features = in_features.to(device)
+    batch_size, seq_len, _ = in_features.shape
+    token_positions = torch.arange(seq_len, device=device).unsqueeze(0).expand(batch_size, -1)
+
+    transformerBlock = TransformerBlock(d_model, num_heads, d_ff, max_seq_len, theta, device)
+    transformerBlock.multihead_self_attention.q_proj.weight.data = weights["attn.q_proj.weight"]
+    transformerBlock.multihead_self_attention.k_proj.weight.data = weights["attn.k_proj.weight"]
+    transformerBlock.multihead_self_attention.v_proj.weight.data = weights["attn.v_proj.weight"]
+    transformerBlock.multihead_self_attention.o_proj.weight.data = weights["attn.output_proj.weight"]
+    transformerBlock.rmsnorm1.weight.data = weights["ln1.weight"]
+    transformerBlock.swiglu.w1.weight.data = weights["ffn.w1.weight"]
+    transformerBlock.swiglu.w2.weight.data = weights["ffn.w2.weight"]
+    transformerBlock.swiglu.w3.weight.data = weights["ffn.w3.weight"]
+    transformerBlock.rmsnorm2.weight.data = weights["ln2.weight"]
+    out_features = transformerBlock.forward(in_features, token_positions)
+    return out_features
 
 
 def run_transformer_lm(

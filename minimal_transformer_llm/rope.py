@@ -4,7 +4,6 @@ import torch.nn as nn
 class RotaryPositionalEmbedding(nn.Module):
     def __init__(self, theta: float, d_k: int, max_seq_len: int, device: torch.device=None):
         super(RotaryPositionalEmbedding, self).__init__()
-        print(theta)
         self.theta = theta
         self.d_k = d_k
         self.max_seq_len = max_seq_len
