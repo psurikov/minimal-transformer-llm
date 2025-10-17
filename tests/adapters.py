@@ -19,6 +19,7 @@ from minimal_transformer_llm.softmax import softmax
 from minimal_transformer_llm.scaled_dot_product_attention import scaled_dot_product_attention
 from minimal_transformer_llm.multihead_self_attention import MultiheadSelfAttention
 from minimal_transformer_llm.transformer_block import TransformerBlock
+from minimal_transformer_llm.tranformer_lm import TransformerLm
 
 device_const = "cpu"
 
@@ -317,20 +318,21 @@ def run_transformer_block(
     """
     
     device = torch.device(device_const)
+    norm_eps = 0.00001
     in_features = in_features.to(device)
     batch_size, seq_len, _ = in_features.shape
     token_positions = torch.arange(seq_len, device=device).unsqueeze(0).expand(batch_size, -1)
 
-    transformerBlock = TransformerBlock(d_model, num_heads, d_ff, max_seq_len, theta, device)
+    transformerBlock = TransformerBlock(d_model, num_heads, d_ff, max_seq_len, theta, norm_eps, device)
     transformerBlock.multihead_self_attention.q_proj.weight.data = weights["attn.q_proj.weight"]
     transformerBlock.multihead_self_attention.k_proj.weight.data = weights["attn.k_proj.weight"]
     transformerBlock.multihead_self_attention.v_proj.weight.data = weights["attn.v_proj.weight"]
     transformerBlock.multihead_self_attention.o_proj.weight.data = weights["attn.output_proj.weight"]
-    transformerBlock.rmsnorm1.weight.data = weights["ln1.weight"]
+    transformerBlock.norm1.weight.data = weights["ln1.weight"]
     transformerBlock.swiglu.w1.weight.data = weights["ffn.w1.weight"]
     transformerBlock.swiglu.w2.weight.data = weights["ffn.w2.weight"]
     transformerBlock.swiglu.w3.weight.data = weights["ffn.w3.weight"]
-    transformerBlock.rmsnorm2.weight.data = weights["ln2.weight"]
+    transformerBlock.norm2.weight.data = weights["ln2.weight"]
     out_features = transformerBlock.forward(in_features, token_positions)
     return out_features
 
@@ -414,7 +416,25 @@ def run_transformer_lm(
         Float[Tensor, "batch_size sequence_length vocab_size"]: Tensor with the predicted unnormalized
         next-word distribution for each token.
     """
-    raise NotImplementedError
+    device = torch.device(device_const)
+    norm_eps = 0.00001
+    transformerLm = TransformerLm(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta, norm_eps, device)
+    transformerLm.embedding.weight.data = weights["token_embeddings.weight"]
+    for i in range(num_layers):
+        transformer_block: TransformerBlock = transformerLm.transformer_blocks[i]
+        transformer_block.multihead_self_attention.q_proj.weight.data = weights[f"layers.{i}.attn.q_proj.weight"]
+        transformer_block.multihead_self_attention.k_proj.weight.data = weights[f"layers.{i}.attn.k_proj.weight"]
+        transformer_block.multihead_self_attention.v_proj.weight.data = weights[f"layers.{i}.attn.v_proj.weight"]
+        transformer_block.multihead_self_attention.o_proj.weight.data = weights[f"layers.{i}.attn.output_proj.weight"]
+        transformer_block.norm1.weight.data = weights[f"layers.{i}.ln1.weight"]
+        transformer_block.swiglu.w1.weight.data = weights[f"layers.{i}.ffn.w1.weight"]
+        transformer_block.swiglu.w2.weight.data = weights[f"layers.{i}.ffn.w2.weight"]
+        transformer_block.swiglu.w3.weight.data = weights[f"layers.{i}.ffn.w3.weight"]
+        transformer_block.norm2.weight.data = weights[f"layers.{i}.ln2.weight"]
+    transformerLm.norm.weight.data = weights["ln_final.weight"]
+    transformerLm.linear.weight.data = weights["lm_head.weight"]
+    out_features = transformerLm.forward(in_indices)
+    return out_features
 
 
 def run_rmsnorm(
