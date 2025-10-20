@@ -20,6 +20,7 @@ from minimal_transformer_llm.scaled_dot_product_attention import scaled_dot_prod
 from minimal_transformer_llm.multihead_self_attention import MultiheadSelfAttention
 from minimal_transformer_llm.transformer_block import TransformerBlock
 from minimal_transformer_llm.tranformer_lm import TransformerLm
+from minimal_transformer_llm.cross_entropy import cross_entropy
 
 device_const = "cpu"
 
@@ -533,7 +534,8 @@ def run_cross_entropy(
     Returns:
         Float[Tensor, ""]: The average cross-entropy loss across examples.
     """
-    raise NotImplementedError
+    out_loss = cross_entropy(inputs, targets)
+    return out_loss
 
 
 def run_gradient_clipping(parameters: Iterable[torch.nn.Parameter], max_l2_norm: float) -> None:
