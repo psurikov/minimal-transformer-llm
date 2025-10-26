@@ -21,6 +21,7 @@ from minimal_transformer_llm.multihead_self_attention import MultiheadSelfAttent
 from minimal_transformer_llm.transformer_block import TransformerBlock
 from minimal_transformer_llm.tranformer_lm import TransformerLm
 from minimal_transformer_llm.cross_entropy import cross_entropy
+from minimal_transformer_llm.adamw import AdamW
 
 device_const = "cpu"
 
@@ -554,7 +555,7 @@ def get_adamw_cls() -> Any:
     """
     Returns a torch.optim.Optimizer that implements AdamW.
     """
-    raise NotImplementedError
+    return AdamW
 
 
 def run_get_lr_cosine_schedule(
