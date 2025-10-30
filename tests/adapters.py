@@ -22,6 +22,7 @@ from minimal_transformer_llm.transformer_block import TransformerBlock
 from minimal_transformer_llm.tranformer_lm import TransformerLm
 from minimal_transformer_llm.cross_entropy import cross_entropy
 from minimal_transformer_llm.adamw import AdamW
+from minimal_transformer_llm.learning_rate_schedule import learning_rate_schedule
 
 device_const = "cpu"
 
@@ -583,7 +584,7 @@ def run_get_lr_cosine_schedule(
     Returns:
         Learning rate at the given iteration under the specified schedule.
     """
-    raise NotImplementedError
+    return learning_rate_schedule(it, max_learning_rate, min_learning_rate, warmup_iters, cosine_cycle_iters)
 
 
 def run_save_checkpoint(
