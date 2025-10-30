@@ -23,6 +23,7 @@ from minimal_transformer_llm.tranformer_lm import TransformerLm
 from minimal_transformer_llm.cross_entropy import cross_entropy
 from minimal_transformer_llm.adamw import AdamW
 from minimal_transformer_llm.learning_rate_schedule import learning_rate_schedule
+from minimal_transformer_llm.gradient_clipping import clip_gradient
 
 device_const = "cpu"
 
@@ -549,7 +550,7 @@ def run_gradient_clipping(parameters: Iterable[torch.nn.Parameter], max_l2_norm:
 
     The gradients of the parameters (parameter.grad) should be modified in-place.
     """
-    raise NotImplementedError
+    clip_gradient(parameters, max_l2_norm)
 
 
 def get_adamw_cls() -> Any:
