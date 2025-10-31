@@ -24,6 +24,7 @@ from minimal_transformer_llm.cross_entropy import cross_entropy
 from minimal_transformer_llm.adamw import AdamW
 from minimal_transformer_llm.learning_rate_schedule import learning_rate_schedule
 from minimal_transformer_llm.gradient_clipping import clip_gradient
+from minimal_transformer_llm.data_loading import load_data
 
 device_const = "cpu"
 
@@ -502,7 +503,7 @@ def run_get_batch(
         is the sampled input sequences, and the second tuple item is the corresponding
         language modeling labels.
     """
-    raise NotImplementedError
+    return load_data(dataset, batch_size, context_length, device)
 
 
 def run_softmax(in_features: Float[Tensor, " ..."], dim: int) -> Float[Tensor, " ..."]:
