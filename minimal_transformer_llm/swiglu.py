@@ -9,9 +9,9 @@ class Swiglu(nn.Module):
         self.d_ff = d_ff
         self.device = device
         self.dtype = dtype
-        self.w1 = Linear(d_ff, d_model, device, dtype)
-        self.w2 = Linear(d_model, d_ff, device, dtype)
-        self.w3 = Linear(d_ff, d_model, device, dtype)
+        self.w1 = Linear(d_model, d_ff, device, dtype)
+        self.w2 = Linear(d_ff, d_model, device, dtype)
+        self.w3 = Linear(d_model, d_ff, device, dtype)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         w1x = self.w1.forward(x)

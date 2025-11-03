@@ -28,7 +28,7 @@ def cross_entropy(o: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
     # cross_entropy i = -log (exp(oi - m)/sum_exp(oj - m))
     # log and exp can cancel each other out, so we get this:
     # cross_entropy i = log (sum_exp(oj - m)) - oi + m
-
+    
     largest = torch.max(o, dim=-1, keepdim=True).values
     shifted = o - largest
     logsumexp = torch.log(torch.sum(torch.exp(shifted), dim=-1))

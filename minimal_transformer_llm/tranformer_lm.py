@@ -14,21 +14,22 @@ class TransformerLm(nn.Module):
         self.embedding = Embedding(vocab_size, d_model)
         self.transformer_blocks = nn.ModuleList([TransformerBlock(d_model, num_heads, d_ff, context_length, rope_theta, norm_eps, device) for _ in range(num_layers)])
         self.norm = RMSNorm(d_model, norm_eps, device, torch.float)
-        self.linear = Linear(vocab_size, d_model)
+        self.linear = Linear(d_model, vocab_size)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: batch_size sequence_length
         # embeddings: batch_size sequence_length d_model
         embeddings = self.embedding(x)
-        batch_size, seq_len = x.shape
-        # token_positions: [0, 1, 2, 3, 4, .. seq_len - 1] * batch_size
-        token_positions = torch.arange(seq_len, device=self.device).unsqueeze(0).expand(batch_size, -1)
+        if x.ndim == 1:
+            *_, seq_len = x.shape
+            token_positions = torch.arange(seq_len, device=self.device)
+        else:
+            batch_size, seq_len = x.shape
+            # token_positions: [0, 1, 2, 3, 4, .. seq_len - 1] * batch_size
+            token_positions = torch.arange(seq_len, device=self.device).unsqueeze(0).expand(batch_size, -1)
         transformed = embeddings
         for i in range(self.num_layers):
             transformed = self.transformer_blocks[i](transformed, token_positions)
         normalized = self.norm(transformed)
         output_embeddings = self.linear(normalized)
         return output_embeddings
-
-
-
