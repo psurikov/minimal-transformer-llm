@@ -15,8 +15,8 @@ def load_data(dataset: npt.NDArray, batch_size: int, context_length: int, device
     # assign for each batch a part of dataset
     for i in range(batch_size):
         start = np.random.randint(0, length)
-        input[i] = torch.from_numpy(dataset[start : start + context_length])
-        label[i] = torch.from_numpy(dataset[start + 1 : start + context_length + 1])
+        input[i] = torch.from_numpy(dataset[start : start + context_length].copy())
+        label[i] = torch.from_numpy(dataset[start + 1 : start + context_length + 1].copy())
     return input, label
 
 def load_data_np_arrays(dataset: npt.NDArray, batch_size: int, context_length: int, device_string: str) -> tuple[torch.Tensor, torch.Tensor]:

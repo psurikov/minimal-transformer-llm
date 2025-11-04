@@ -20,13 +20,9 @@ class TransformerLm(nn.Module):
         # x: batch_size sequence_length
         # embeddings: batch_size sequence_length d_model
         embeddings = self.embedding(x)
-        if x.ndim == 1:
-            *_, seq_len = x.shape
-            token_positions = torch.arange(seq_len, device=self.device)
-        else:
-            batch_size, seq_len = x.shape
-            # token_positions: [0, 1, 2, 3, 4, .. seq_len - 1] * batch_size
-            token_positions = torch.arange(seq_len, device=self.device).unsqueeze(0).expand(batch_size, -1)
+        batch_size, seq_len = x.shape
+        # token_positions: [0, 1, 2, 3, 4, .. seq_len - 1] * batch_size
+        token_positions = torch.arange(seq_len, device=self.device).unsqueeze(0).expand(batch_size, -1)
         transformed = embeddings
         for i in range(self.num_layers):
             transformed = self.transformer_blocks[i](transformed, token_positions)
